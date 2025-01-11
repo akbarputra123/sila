@@ -22,50 +22,55 @@ class _HistoriPesananPageState extends State<HistoriPesananPage> {
 
   // Fungsi untuk mengambil ID pengguna dengan lastLogin terbaru
   Future<void> fetchUserIdWithLatestLogin() async {
-    try {
-      final response = await http.get(
-        Uri.parse(
-            'https://backendmobile-927b9-default-rtdb.asia-southeast1.firebasedatabase.app/users.json'),
-      );
+  try {
+    final response = await http.get(
+      Uri.parse(
+          'https://backendmobile-927b9-default-rtdb.asia-southeast1.firebasedatabase.app/users.json'),
+    );
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+    if (response.statusCode == 200) {
+      print('Response body: ${response.body}'); // Debugging
+      final Map<String, dynamic> data = json.decode(response.body);
 
-        String latestUserId = '';
-        DateTime latestLogin = DateTime(1970); // Set to a very old date initially
+      String latestUserId = '';
+      DateTime latestLogin = DateTime(1970); // Set to a very old date initially
 
-        data.forEach((userId, userData) {
-          if (userData['lastLogin'] != null) {
-            try {
-              DateTime userLastLogin = DateTime.parse(userData['lastLogin']);
-              if (userLastLogin.isAfter(latestLogin)) {
-                latestLogin = userLastLogin;
-                latestUserId = userId;
-              }
-            } catch (e) {
-              print('Error parsing lastLogin for user $userId: $e');
+      data.forEach((userId, userData) {
+        // Pastikan userData adalah Map sebelum mengaksesnya
+        if (userData is Map<String, dynamic> && userData['lastLogin'] != null) {
+          try {
+            DateTime userLastLogin = DateTime.parse(userData['lastLogin']);
+            if (userLastLogin.isAfter(latestLogin)) {
+              latestLogin = userLastLogin;
+              latestUserId = userId;
             }
+          } catch (e) {
+            print('Error parsing lastLogin for user $userId: $e');
           }
-        });
-
-        // Set the userId to the one with the latest login
-        setState(() {
-          userId = latestUserId;
-        });
-
-        // Setelah mendapatkan userId, ambil histori pesanan
-        if (userId.isNotEmpty) {
-          fetchHistoryOrders(userId);
         } else {
-          print('Tidak ada user dengan lastLogin terbaru');
+          print('Invalid userData for user $userId: $userData');
         }
+      });
+
+      // Set the userId to the one with the latest login
+      setState(() {
+        userId = latestUserId;
+      });
+
+      // Setelah mendapatkan userId, ambil histori pesanan
+      if (userId.isNotEmpty) {
+        fetchHistoryOrders(userId);
       } else {
-        throw Exception('Gagal mengambil data pengguna');
+        print('Tidak ada user dengan lastLogin terbaru');
       }
-    } catch (error) {
-      print('Error saat mengambil data pengguna: $error');
+    } else {
+      throw Exception('Gagal mengambil data pengguna');
     }
+  } catch (error) {
+    print('Error saat mengambil data pengguna: $error');
   }
+}
+
 
   // Fungsi untuk mengambil data histori pesanan berdasarkan userId
   Future<void> fetchHistoryOrders(String userId) async {

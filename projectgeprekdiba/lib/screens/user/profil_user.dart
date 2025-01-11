@@ -25,45 +25,54 @@ class _ProfilUserPageState extends State<ProfilUserPage> {
     _fetchUserData();
   }
 
-  Future<void> _fetchUserData() async {
-    final url = Uri.parse(
-        'https://backendmobile-927b9-default-rtdb.asia-southeast1.firebasedatabase.app/users.json');
+ Future<void> _fetchUserData() async {
+  final url = Uri.parse(
+      'https://backendmobile-927b9-default-rtdb.asia-southeast1.firebasedatabase.app/users.json');
 
-    try {
-      final response = await http.get(url);
+  try {
+    final response = await http.get(url);
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
+    if (response.statusCode == 200) {
+      print('Response body: ${response.body}'); // Debugging: Periksa respons
+      final Map<String, dynamic> data = json.decode(response.body);
 
-        // Cari user dengan lastLogin terbaru
-        String? latestUserKey;
-        DateTime? latestLoginTime;
+      // Variabel untuk menyimpan user dengan `lastLogin` terbaru
+      String? latestUserKey;
+      DateTime? latestLoginTime;
 
-        data.forEach((key, value) {
+      // Iterasi data JSON
+      data.forEach((key, value) {
+        if (value is Map<String, dynamic>) {
           final lastLogin = DateTime.tryParse(value['lastLogin'] ?? '');
           if (lastLogin != null &&
               (latestLoginTime == null || lastLogin.isAfter(latestLoginTime!))) {
             latestLoginTime = lastLogin;
             latestUserKey = key;
           }
-        });
-
-        if (latestUserKey != null) {
-          setState(() {
-            _userName = data[latestUserKey]['name'] ?? 'User Name';
-            _userPassword =
-                data[latestUserKey]['password'] ?? 'User Password';
-            _userProfileImage =
-                data[latestUserKey]['profileImage'] ?? ''; // Ambil path gambar
-          });
+        } else {
+          print('Invalid user data for key $key: $value');
         }
+      });
+
+      if (latestUserKey != null && data[latestUserKey] is Map<String, dynamic>) {
+        final userData = data[latestUserKey] as Map<String, dynamic>;
+
+        setState(() {
+          _userName = userData['name'] ?? 'User Name';
+          _userPassword = userData['password'] ?? 'User Password';
+          _userProfileImage =
+              userData['profileImage'] ?? ''; // Path gambar, bisa diubah
+        });
       } else {
-        print('Failed to fetch user data: ${response.statusCode}');
+        print('Tidak ada user dengan lastLogin terbaru atau data tidak valid');
       }
-    } catch (e) {
-      print('Error fetching user data: $e');
+    } else {
+      print('Failed to fetch user data: ${response.statusCode}');
     }
+  } catch (e) {
+    print('Error fetching user data: $e');
   }
+}
 
   void _logout() {
     showDialog(

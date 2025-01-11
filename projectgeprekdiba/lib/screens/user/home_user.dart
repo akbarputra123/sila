@@ -101,37 +101,37 @@ class _KelolaBerandaUserPageState extends State<KelolaBerandaUserPage> {
     super.initState();
     _fetchLatestUser();
   }
+Future<void> _fetchLatestUser() async {
+  try {
+    final response = await http.get(Uri.parse(_url));
+    if (response.statusCode == 200) {
+      print(response.body); // Tambahkan ini untuk debug
+      final Map<String, dynamic> data = json.decode(response.body);
 
-  Future<void> _fetchLatestUser() async {
-    try {
-      final response = await http.get(Uri.parse(_url));
+      String latestUserName = "User";
+      DateTime? latestLoginTime;
 
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> data = json.decode(response.body);
-
-        String latestUserName = "User";
-        DateTime? latestLoginTime;
-
-        data.forEach((key, value) {
-          if (value['lastLogin'] != null) {
-            DateTime userLoginTime = DateTime.parse(value['lastLogin']);
-            if (latestLoginTime == null || userLoginTime.isAfter(latestLoginTime!)) {
-              latestLoginTime = userLoginTime;
-              latestUserName = value['name'];
-            }
+      data.forEach((key, value) {
+        if (value is Map<String, dynamic> && value['lastLogin'] != null) {
+          DateTime userLoginTime = DateTime.parse(value['lastLogin']);
+          if (latestLoginTime == null || userLoginTime.isAfter(latestLoginTime!)) {
+            latestLoginTime = userLoginTime;
+            latestUserName = value['name'];
           }
-        });
+        }
+      });
 
-        setState(() {
-          _userName = latestUserName;
-        });
-      } else {
-        throw Exception("Gagal mengambil data pengguna.");
-      }
-    } catch (e) {
-      print("Error: $e");
+      setState(() {
+        _userName = latestUserName;
+      });
+    } else {
+      throw Exception("Gagal mengambil data pengguna.");
     }
+  } catch (e) {
+    print("Error: $e");
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
